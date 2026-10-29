@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitPick</title>
+<meta name="description" content="FitPick: outfit ideas by occasion and live weather, with a shopping chatbot that links to Amazon.in and Flipkart.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Playfair+Display:wght@500;600;700&display=swap">
+<style>
+/* Layout: dark boutique. Centered masthead, then a two-column planner (occasion | weather), chatbot docked bottom-right. */
+:root{
+  --ink:#0d0c0b; --panel:#161412; --panel-2:#1d1a17; --line:#2e2a24;
+  --gold:#c9a45c; --gold-hi:#e6cb8f; --cream:#efe6d6; --muted:#a89f8f;
+  --good:#8fbf8a; --warn:#e0a45a;
+  --display:"Playfair Display",Georgia,"Times New Roman",serif;
+  --body:"Jost","Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);font-size:16px;line-height:1.55;
+  background-image:radial-gradient(1100px 520px at 50% -120px,#2a241a 0%,transparent 70%)}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 120px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+
+/* masthead */
+.mast{text-align:center;padding:20px 0 36px}
+.crown{width:54px;height:auto;color:var(--gold)}
+.rule{display:flex;align-items:center;gap:18px;max-width:420px;margin:0 auto}
+.rule::before,.rule::after{content:"";flex:1;height:1px;background:var(--gold);opacity:.7}
+.logo{font-family:var(--display);font-weight:500;font-size:clamp(56px,12vw,104px);line-height:1;letter-spacing:-.01em;margin:6px 0 0}
+.logo b{font-weight:500;color:var(--gold)}
+.tag{font-family:var(--display);letter-spacing:.14em;color:var(--cream);font-size:clamp(15px,2.6vw,20px);margin:14px 0 22px}
+.cta{display:inline-flex;align-items:center;gap:12px;padding:14px 34px;border-radius:999px;border:1px solid var(--gold);
+  background:transparent;color:var(--cream);font-family:var(--display);font-size:20px;text-decoration:none;cursor:pointer;transition:background .2s,color .2s}
+.cta:hover{background:var(--gold);color:var(--ink)}
+.cta svg{width:26px;color:currentColor}
+
+/* controls */
+.bar{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;justify-content:space-between;
+  padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:28px}
+.lbl{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:8px 22px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--ink);font-weight:500}
+
+h2{font-family:var(--display);font-weight:500;font-size:clamp(26px,4vw,36px);line-height:1.15;margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 20px;max-width:56ch}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.col{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.col{padding:20px}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.chip{border:1px solid var(--line);background:var(--panel-2);padding:7px 15px;border-radius:999px;cursor:pointer;font-size:14px;color:var(--cream);transition:border-color .15s}
+.chip:hover{border-color:var(--gold)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:500}
+
+/* outfit list */
+.vibe{font-family:var(--display);font-style:italic;color:var(--gold-hi);font-size:19px;margin:0 0 14px}
+.items{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.item{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.role{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.nm{min-width:0;overflow-wrap:anywhere}
+.shop{display:flex;gap:6px}
+.shop a{font-size:12px;letter-spacing:.04em;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel-2)}
+.shop a:hover{border-color:var(--gold);color:var(--gold-hi)}
+@media(max-width:520px){.item{grid-template-columns:1fr;gap:4px}.shop{margin-top:4px}}
+.note{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:var(--panel-2);border:1px dashed var(--line);color:var(--cream);font-size:15px}
+.note b{color:var(--gold-hi);font-weight:500}
+
+/* weather */
+.wx{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-end;margin-bottom:16px}
+.temp{font-family:var(--display);font-size:64px;line-height:1;color:var(--gold-hi)}
+.temp small{font-size:26px;color:var(--muted)}
+.meta{color:var(--muted);font-size:14px;display:grid;gap:2px}
+.meta b{color:var(--cream);font-weight:500}
+.src{font-size:12px;color:var(--muted);margin:0 0 14px}
+.find{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.find input{flex:1 1 180px;min-width:0;background:var(--panel-2);border:1px solid var(--line);color:var(--cream);border-radius:999px;padding:10px 16px;font:inherit}
+.btn{border:1px solid var(--gold);background:transparent;color:var(--cream);border-radius:999px;padding:10px 18px;cursor:pointer}
+.btn:hover{background:var(--gold);color:var(--ink)}
+.btn.solid{background:var(--gold);color:var(--ink)}
+.msg{font-size:13px;color:var(--warn);min-height:1.2em;margin:0 0 10px}
+
+footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center;max-width:64ch;margin-inline:auto}
+
+/* chatbot */
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;
+  display:flex;align-items:center;gap:10px;border:1px solid var(--gold);background:var(--ink);color:var(--cream);border-radius:999px;padding:12px 20px;cursor:pointer;
+  box-shadow:0 10px 30px rgba(0,0,0,.55);font-family:var(--display);font-size:17px}
+.fab svg{width:22px;color:var(--gold)}
+.chat{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;
+  width:min(400px,calc(100vw - 32px));height:min(620px,calc(100vh - 40px));display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--gold);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.7);overflow:hidden}
+.chat-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.chat-h strong{font-family:var(--display);font-weight:500;font-size:19px}
+.chat-h span{display:block;font-size:12px;color:var(--muted)}
+.x{border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:var(--muted);padding:0 6px}
+.log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.b{max-width:88%;padding:10px 14px;border-radius:16px;font-size:15px;overflow-wrap:anywhere}
+.b.bot{background:var(--panel-2);border:1px solid var(--line);align-self:flex-start;border-top-left-radius:4px}
+.b.me{background:var(--gold);color:var(--ink);align-self:flex-end;border-top-right-radius:4px}
+.links{display:grid;gap:8px;margin-top:10px}
+.lk{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;border-top:1px solid var(--line);padding-top:8px}
+.lk span{font-size:14px;min-width:0}
+.quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
+.quick .chip{font-size:12.5px;padding:5px 11px}
+.send{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.send input{flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);color:var(--cream);border-radius:999px;padding:10px 16px;font:inherit}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="mast">
+    <svg class="crown" viewBox="0 0 64 40" fill="currentColor" aria-hidden="true"><path d="M32 2l5 13 11-9-3 17H19L16 6l11 9z"/><rect x="18" y="27" width="28" height="4" rx="1"/><rect x="21" y="34" width="22" height="3" rx="1"/></svg>
+    <div class="rule" aria-hidden="true"></div>
+    <h1 class="logo">Fit<b>Pick</b></h1>
+    <p class="tag">Find Your Style. Pick Your Fit.</p>
+    <a class="cta" href="#planner"><svg viewBox="0 0 64 40" fill="currentColor" aria-hidden="true"><path d="M32 2l5 13 11-9-3 17H19L16 6l11 9z"/><rect x="18" y="27" width="28" height="4" rx="1"/></svg>Get Started</a>
+  </header>
+
+  <section id="planner" aria-labelledby="ptitle">
+    <div class="bar">
+      <div><span class="lbl">Styling for</span><br>
+        <div class="seg" role="group" aria-label="Style for">
+          <button type="button" data-g="men" aria-pressed="true">Men</button>
+          <button type="button" data-g="women" aria-pressed="false">Women</button>
+        </div>
+      </div>
+      <h2 id="ptitle" style="margin:0;font-size:24px">Today's outfit planner</h2>
+    </div>
+
+    <div class="grid">
+      <article class="col" aria-labelledby="otitle">
+        <h2 id="otitle">What to wear for&hellip;</h2>
+        <p class="sub">Pick an occasion. Each piece links to a search on Amazon.in and Flipkart.</p>
+        <div class="chips" id="occ" role="group" aria-label="Occasion"></div>
+        <p class="vibe" id="vibe"></p>
+        <ul class="items" id="outfit"></ul>
+        <p class="note" id="occnote"></p>
+      </article>
+
+      <article class="col" aria-labelledby="wtitle">
+        <h2 id="wtitle">What to wear in this weather</h2>
+        <p class="sub">Search a city for live weather, or pick a condition yourself.</p>
+        <form class="find" id="cityForm">
+          <input id="city" type="text" placeholder="City, e.g. Mumbai" aria-label="City" autocomplete="off">
+          <button class="btn solid" type="submit">Check</button>
+          <button class="btn" type="button" id="geo">Use my location</button>
+        </form>
+        <p class="msg" id="wmsg" role="status"></p>
+        <div class="wx">
+          <div class="temp"><span id="t">28</span><small>&deg;C</small></div>
+          <div class="meta" id="meta"></div>
+        </div>
+        <p class="src" id="src"></p>
+        <div class="chips" id="cond" role="group" aria-label="Weather condition"></div>
+        <p class="vibe" id="wvibe"></p>
+        <ul class="items" id="wfit"></ul>
+        <p class="note" id="wnote"></p>
+      </article>
+    </div>
+  </section>
+
+  <footer>FitPick opens search results on Amazon.in and Flipkart. Prices, sizes and stock are decided by those stores. Weather data from Open-Meteo.</footer>
+</div>
+
+<button class="fab" id="fab" type="button" aria-expanded="false" aria-controls="chat">
+  <svg viewBox="0 0 64 40" fill="currentColor" aria-hidden="true"><path d="M32 2l5 13 11-9-3 17H19L16 6l11 9z"/><rect x="18" y="27" width="28" height="4" rx="1"/></svg>Ask FitPick
+</button>
+<section class="chat" id="chat" hidden aria-label="FitPick style assistant">
+  <div class="chat-h"><div><strong>FitPick Stylist</strong><span>Shopping links from Amazon.in and Flipkart</span></div><button class="x" id="close" type="button" aria-label="Close chat">&times;</button></div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="quick" id="quick"></div>
+  <form class="send" id="chatForm"><input id="chatIn" type="text" placeholder="e.g. black cargo pants under 1500" aria-label="Message" autocomplete="off"><button class="btn solid" type="submit">Send</button></form>
+</section>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var AMZ=function(q){return "https://www.amazon.in/s?k="+encodeURIComponent(q)};
+var FLP=function(q){return "https://www.flipkart.com/search?q="+encodeURIComponent(q)};
+var I=function(role,name,q){return {role:role,name:name,q:q}};
+
+/* ---------- data ---------- */
+var OCC={
+ casual:{label:"Casual day out",vibe:"Easy, clean, comfortable.",
+  men:[I("Top","Plain oversized t-shirt in white or beige","men oversized plain t-shirt"),I("Bottom","Straight-fit jeans or black cargos","men black cargo pants"),I("Shoes","White or cream sneakers","men white sneakers"),I("Extra","Minimal watch and a cap","men analog watch")],
+  women:[I("Top","Fitted tee or relaxed shirt","women oversized shirt"),I("Bottom","High-waist straight jeans","women high waist straight jeans"),I("Shoes","Clean white sneakers","women white sneakers"),I("Extra","Small sling bag","women sling bag")]},
+ college:{label:"College",vibe:"Comfortable for a full day, still sharp.",
+  men:[I("Top","Graphic tee or polo","men polo t-shirt"),I("Layer","Hoodie or light jacket","men zip hoodie"),I("Bottom","Joggers or relaxed jeans","men joggers"),I("Shoes","Chunky sneakers","men chunky sneakers")],
+  women:[I("Top","Crop tee or shirt","women crop top"),I("Layer","Denim or bomber jacket","women denim jacket"),I("Bottom","Wide-leg jeans or cargos","women wide leg jeans"),I("Shoes","Canvas or chunky sneakers","women chunky sneakers")]},
+ office:{label:"Office",vibe:"Polished and breathable for long hours.",
+  men:[I("Top","Light formal shirt in white, blue or grey","men formal shirt"),I("Bottom","Tailored trousers","men formal trousers"),I("Shoes","Leather derbies or loafers","men formal shoes"),I("Extra","Leather belt and slim watch","men leather belt")],
+  women:[I("Top","Structured shirt or blouse","women formal shirt"),I("Bottom","Straight formal trousers","women formal trousers"),I("Shoes","Block heels or loafers","women formal loafers"),I("Extra","Structured tote bag","women office tote bag")]},
+ date:{label:"Date night",vibe:"Dark tones, one standout piece.",
+  men:[I("Top","Black fitted shirt or knit polo","men black casual shirt"),I("Layer","Bomber or leather-look jacket","men leather jacket"),I("Bottom","Dark slim jeans or chinos","men slim fit chinos"),I("Shoes","Clean leather sneakers or Chelsea boots","men chelsea boots")],
+  women:[I("Dress","Satin slip dress or black midi","women black midi dress"),I("Layer","Cropped blazer","women cropped blazer"),I("Shoes","Strappy heels or heeled boots","women heels"),I("Extra","Gold jewellery and a small bag","women gold earrings")]},
+ wedding:{label:"Wedding",vibe:"Festive, rich fabrics, gold accents.",
+  men:[I("Outfit","Kurta set or sherwani in ivory, maroon or navy","men sherwani"),I("Layer","Nehru jacket","men nehru jacket"),I("Shoes","Juttis or mojaris","men mojari"),I("Extra","Stole or brooch","men dupatta stole")]  ,
+  women:[I("Outfit","Lehenga or silk saree","women lehenga"),I("Jewellery","Jhumkas and a statement necklace","women jhumka earrings"),I("Shoes","Embellished heels or flats","women ethnic sandals"),I("Bag","Potli or clutch","women potli bag")]},
+ party:{label:"Party",vibe:"Bold, a little shine.",
+  men:[I("Top","Black shirt or fitted tee","men party wear shirt"),I("Layer","Blazer or denim jacket","men casual blazer"),I("Bottom","Black slim jeans","men black jeans"),I("Shoes","Boots or sleek sneakers","men boots")],
+  women:[I("Outfit","Sequin top with black trousers, or a mini dress","women party wear dress"),I("Shoes","Block heels","women block heels"),I("Bag","Mini chain bag","women chain sling bag"),I("Extra","Statement earrings","women statement earrings")]},
+ festival:{label:"Festival / Diwali",vibe:"Ethnic, colourful, comfortable to sit in.",
+  men:[I("Outfit","Cotton or silk kurta with pyjama","men kurta set"),I("Layer","Embroidered jacket","men ethnic jacket"),I("Shoes","Kolhapuri or mojari","men kolhapuri chappal"),I("Extra","Gold-tone bracelet","men kada bracelet")],
+  women:[I("Outfit","Anarkali, sharara or saree","women anarkali suit"),I("Dupatta","Contrast dupatta","women dupatta"),I("Shoes","Juttis","women jutti"),I("Jewellery","Oxidised or kundan set","women kundan jewellery set")]},
+ gym:{label:"Gym",vibe:"Breathable, flexible, quick-dry.",
+  men:[I("Top","Dri-fit tee or tank","men dry fit gym t-shirt"),I("Bottom","Training shorts or joggers","men gym shorts"),I("Shoes","Training shoes","men training shoes"),I("Extra","Gym bag and bottle","men gym bag")],
+  women:[I("Top","Sports bra and tank","women sports bra"),I("Bottom","High-waist leggings","women gym leggings"),I("Shoes","Training shoes","women training shoes"),I("Extra","Gym duffel","women gym bag")]},
+ travel:{label:"Travel",vibe:"Layers, stretch, pockets.",
+  men:[I("Top","Soft cotton tee and an overshirt","men overshirt"),I("Bottom","Stretch joggers or cargos","men travel pants"),I("Shoes","Slip-on or cushioned sneakers","men walking shoes"),I("Extra","Backpack and neck pillow","men travel backpack")],
+  women:[I("Top","Soft tee with a light cardigan","women cardigan"),I("Bottom","Stretch trousers or joggers","women travel pants"),I("Shoes","Cushioned sneakers","women walking shoes"),I("Extra","Crossbody bag and scarf","women crossbody bag")]},
+ interview:{label:"Interview",vibe:"Quiet confidence. Fit matters most.",
+  men:[I("Top","Crisp white or light blue shirt","men white formal shirt"),I("Layer","Navy or charcoal blazer","men formal blazer"),I("Bottom","Matching trousers","men formal trousers grey"),I("Shoes","Polished black or brown leather shoes","men oxford shoes")],
+  women:[I("Top","Neutral blouse or shirt","women formal blouse"),I("Layer","Tailored blazer","women formal blazer"),I("Bottom","Trousers or pencil skirt","women pencil skirt"),I("Shoes","Low block heels or flats","women formal flats")]}
+};
+
+/* weather bands */
+var BANDS={
+ freezing:{name:"Freezing",range:"under 10°C",vibe:"Layer up: base, mid, shell.",
+  men:[I("Base","Thermal innerwear","men thermal innerwear"),I("Mid","Wool sweater or fleece","men woollen sweater"),I("Outer","Padded puffer jacket","men puffer jacket"),I("Extra","Beanie, gloves, muffler","men woollen cap gloves muffler")],
+  women:[I("Base","Thermal innerwear","women thermal innerwear"),I("Mid","Wool sweater or fleece","women woollen sweater"),I("Outer","Long puffer or wool coat","women puffer jacket"),I("Extra","Beanie, gloves, scarf","women woollen scarf beanie")],
+  note:"Wool and fleece hold heat best. Avoid cotton as the base layer if you will be outside for long."},
+ cold:{name:"Cold",range:"10–17°C",vibe:"Light layers you can remove.",
+  men:[I("Top","Full-sleeve tee or flannel shirt","men flannel shirt"),I("Outer","Hoodie, denim or bomber jacket","men bomber jacket"),I("Bottom","Jeans or heavier trousers","men jeans"),I("Shoes","Sneakers or boots","men boots")],
+  women:[I("Top","Knit top or turtleneck","women turtleneck top"),I("Outer","Denim jacket or trench","women trench coat"),I("Bottom","Jeans or lined trousers","women jeans"),I("Shoes","Ankle boots or sneakers","women ankle boots")],
+  note:"Mornings and nights drop a few degrees. A jacket you can tie around your waist works well."},
+ mild:{name:"Pleasant",range:"18–24°C",vibe:"The easy range. Wear what you like.",
+  men:[I("Top","Cotton shirt or polo","men cotton shirt"),I("Layer","Light overshirt (optional)","men overshirt"),I("Bottom","Chinos or jeans","men chinos"),I("Shoes","Sneakers or loafers","men casual shoes")],
+  women:[I("Top","Cotton top or light shirt","women cotton top"),I("Layer","Light cardigan (optional)","women light cardigan"),I("Bottom","Jeans, skirt or palazzo","women palazzo"),I("Shoes","Sneakers or flats","women flats")],
+  note:"Carry something light for the evening if you will be out late."},
+ warm:{name:"Warm",range:"25–31°C",vibe:"Light fabrics, light colours.",
+  men:[I("Top","Cotton or linen half-sleeve shirt","men linen shirt half sleeve"),I("Bottom","Chinos or relaxed shorts","men cotton shorts"),I("Shoes","Breathable sneakers or sandals","men sandals"),I("Extra","Sunglasses","men sunglasses")],
+  women:[I("Top","Cotton top or sleeveless blouse","women sleeveless top"),I("Bottom","Linen trousers or a midi skirt","women linen pants"),I("Shoes","Flats or sandals","women sandals"),I("Extra","Sunglasses","women sunglasses")],
+  note:"Pick cotton, linen or rayon. White and pastel shades reflect heat."},
+ hot:{name:"Hot",range:"32°C and above",vibe:"Breathe, cover from the sun, stay hydrated.",
+  men:[I("Top","Loose linen shirt or cotton tee","men linen shirt"),I("Bottom","Shorts or light cotton pants","men cotton pants"),I("Shoes","Open sandals or mesh sneakers","men slides"),I("Extra","Cap, sunglasses, sunscreen","men cap")],
+  women:[I("Top","Loose cotton kurti or sundress","women cotton kurti"),I("Bottom","Palazzo or culottes","women cotton palazzo"),I("Shoes","Flat sandals","women flat sandals"),I("Extra","Cotton scarf, sunglasses, sunscreen","women sun protection scarf")],
+  note:"Skip dark, tight and synthetic clothes. Loose cotton keeps air moving."}
+};
+var CONDS=[
+ {id:"clear",label:"Sunny",t:28},{id:"cloud",label:"Cloudy",t:24},{id:"rain",label:"Rainy",t:23},
+ {id:"storm",label:"Thunderstorm",t:24},{id:"snow",label:"Snow",t:-1},{id:"fog",label:"Foggy",t:12},
+ {id:"hotday",label:"Heatwave",t:38},{id:"chill",label:"Chilly",t:14}
+];
+var EXTRA={
+ rain:{men:[I("Rain","Waterproof jacket or raincoat","men raincoat"),I("Shoes","Quick-dry floaters or waterproof sneakers","men waterproof shoes")],women:[I("Rain","Raincoat or poncho","women raincoat"),I("Shoes","Rubber sandals or waterproof sneakers","women rain shoes")],note:"Avoid suede and heavy denim. Carry a compact umbrella."},
+ storm:{men:[I("Rain","Waterproof jacket","men raincoat")],women:[I("Rain","Raincoat","women raincoat")],note:"Stay indoors if you can. If not, waterproof outer layer and non-slip shoes."},
+ snow:{men:[I("Shoes","Insulated snow boots","men snow boots")],women:[I("Shoes","Insulated snow boots","women snow boots")],note:"Waterproof boots and wool socks matter as much as the jacket."},
+ fog:{men:[],women:[],note:"Low visibility. Brighter outer layers help you stay seen."}
+};
+
+/* ---------- state ---------- */
+var S={g:"men",occ:"casual",temp:28,cond:"clear",feels:null,wind:null,hum:null,uv:null,pop:null,place:"",live:false};
+try{var sv=JSON.parse(localStorage.getItem("fitpick")||"{}");if(sv.g)S.g=sv.g;if(sv.occ&&OCC[sv.occ])S.occ=sv.occ}catch(e){}
+function save(){try{localStorage.setItem("fitpick",JSON.stringify({g:S.g,occ:S.occ}))}catch(e){}}
+function band(t){return t<10?"freezing":t<18?"cold":t<25?"mild":t<32?"warm":"hot"}
+
+/* ---------- rendering ---------- */
+function el(tag,cls,txt){var n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n}
+function shopLinks(q){var w=el("span","shop");[["Amazon",AMZ(q)],["Flipkart",FLP(q)]].forEach(function(p){var a=el("a",null,p[0]);a.href=p[1];a.target="_blank";a.rel="noopener noreferrer";a.setAttribute("aria-label",p[0]+" search: "+q);w.appendChild(a)});return w}
+function fillList(ul,items){ul.textContent="";items.forEach(function(it){var li=el("li","item");li.appendChild(el("span","role",it.role));li.appendChild(el("span","nm",it.name));li.appendChild(shopLinks(it.q));ul.appendChild(li)})}
+function pressed(parent,attr,val){Array.prototype.forEach.call(parent.querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",String(b.getAttribute(attr)===val))})}
+function noteHTML(n,label,text){n.textContent="";var b=el("b",null,label+" ");n.appendChild(b);n.appendChild(document.createTextNode(text))}
+
+function renderOcc(){
+  var o=OCC[S.occ];
+  $("vibe").textContent=o.label+": "+o.vibe;
+  fillList($("outfit"),o[S.g]);
+  var b=BANDS[band(S.temp)];
+  var tweak={freezing:"it is freezing, so add a thermal base and a padded jacket over this outfit.",cold:"it is cold, so add a jacket or sweater over this outfit.",mild:"the weather is pleasant. Wear this as it is.",warm:"it is warm, so choose cotton or linen versions of these pieces.",hot:"it is hot, so go for the lightest, loosest versions and skip heavy layers."}[band(S.temp)];
+  noteHTML($("occnote"),"With today's weather ("+Math.round(S.temp)+"°C):",tweak);
+  pressed($("occ"),"data-o",S.occ);
+}
+function renderWx(){
+  var bk=band(S.temp),b=BANDS[bk],c=S.cond;
+  $("t").textContent=Math.round(S.temp);
+  var m=$("meta");m.textContent="";
+  var rows=[["Band",b.name+" ("+b.range+")"]];
+  if(S.feels!=null)rows.push(["Feels like",Math.round(S.feels)+"°C"]);
+  if(S.hum!=null)rows.push(["Humidity",S.hum+"%"]);
+  if(S.wind!=null)rows.push(["Wind",Math.round(S.wind)+" km/h"]);
+  if(S.uv!=null)rows.push(["UV index",String(Math.round(S.uv))]);
+  if(S.pop!=null)rows.push(["Rain chance",S.pop+"%"]);
+  rows.forEach(function(r){var d=el("div");d.appendChild(document.createTextNode(r[0]+": "));d.appendChild(el("b",null,r[1]));m.appendChild(d)});
+  $("src").textContent=S.live?("Live weather for "+S.place):("Choose a condition below, or search a city. Showing: "+(S.place||"your selection"));
+  var items=b[S.g].slice(),notes=[b.note];
+  var ex=EXTRA[c]; if(ex){items=items.concat(ex[S.g]);notes.push(ex.note)}
+  if(S.uv!=null&&S.uv>=6&&c!=="rain"&&c!=="storm"){items.push(I("Sun","Sunglasses, cap and SPF 30+ sunscreen",(S.g==="men"?"men":"women")+" sunglasses"));notes.push("UV is high today.")}
+  $("wvibe").textContent=b.name+": "+b.vibe;
+  fillList($("wfit"),items);
+  noteHTML($("wnote"),"Tip:",notes.join(" "));
+  var cc=$("cond");Array.prototype.forEach.call(cc.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",String(x.dataset.c===S.cond&&!S.live))});
+}
+function renderAll(){
+  pressed(document.querySelector(".seg"),"data-g",S.g);
+  renderOcc();renderWx();
+}
+
+/* build chips */
+Object.keys(OCC).forEach(function(k){var b=el("button","chip",OCC[k].label);b.type="button";b.dataset.o=k;b.setAttribute("aria-pressed","false");b.addEventListener("click",function(){S.occ=k;save();renderOcc()});$("occ").appendChild(b)});
+CONDS.forEach(function(c){var b=el("button","chip",c.label);b.type="button";b.dataset.c=c.id;b.setAttribute("aria-pressed","false");
+  b.addEventListener("click",function(){S.cond=c.id;S.temp=c.t;S.feels=S.wind=S.hum=S.uv=S.pop=null;S.live=false;S.place="Manual: "+c.label;$("wmsg").textContent="";renderAll()});$("cond").appendChild(b)});
+Array.prototype.forEach.call(document.querySelectorAll(".seg button"),function(b){b.addEventListener("click",function(){S.g=b.dataset.g;save();renderAll()})});
+
+/* ---------- live weather (Open-Meteo, no key) ---------- */
+function mapCode(c){return c===0||c===1?"clear":c===2||c===3?"cloud":c===45||c===48?"fog":(c>=51&&c<=67)||(c>=80&&c<=82)?"rain":(c>=71&&c<=77)||c===85||c===86?"snow":c>=95?"storm":"cloud"}
+function loadWx(lat,lon,place){
+  $("wmsg").textContent="Fetching weather…";
+  var u="https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=uv_index_max,precipitation_probability_max&timezone=auto&forecast_days=1";
+  return fetch(u).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    var c=j.current,d=j.daily||{};
+    S.temp=c.temperature_2m;S.feels=c.apparent_temperature;S.hum=c.relative_humidity_2m;S.wind=c.wind_speed_10m;
+    S.uv=d.uv_index_max?d.uv_index_max[0]:null;S.pop=d.precipitation_probability_max?d.precipitation_probability_max[0]:null;
+    S.cond=mapCode(c.weather_code);S.place=place;S.live=true;$("wmsg").textContent="";renderAll();
+  }).catch(function(){$("wmsg").textContent="Could not load live weather here. Pick a condition below instead."});
+}
+$("cityForm").addEventListener("submit",function(e){e.preventDefault();var q=$("city").value.trim();if(!q)return;
+  $("wmsg").textContent="Searching…";
+  fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&name="+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){
+    if(!j.results||!j.results.length){$("wmsg").textContent="City not found. Check the spelling.";return}
+    var p=j.results[0];return loadWx(p.latitude,p.longitude,p.name+(p.country?", "+p.country:""));
+  }).catch(function(){$("wmsg").textContent="Could not search cities from here. Pick a condition below instead."});
+});
+$("geo").addEventListener("click",function(){
+  if(!navigator.geolocation){$("wmsg").textContent="Location is not available. Search a city instead.";return}
+  $("wmsg").textContent="Waiting for location permission…";
+  navigator.geolocation.getCurrentPosition(function(p){loadWx(p.coords.latitude.toFixed(3),p.coords.longitude.toFixed(3),"your location")},
+    function(){$("wmsg").textContent="Location was blocked. Search a city instead."},{timeout:10000});
+});
+
+/* ---------- chatbot (rule-based, runs in the browser) ---------- */
+var chat=$("chat"),fab=$("fab"),log=$("log");
+function openChat(o){chat.hidden=!o;fab.hidden=o;fab.setAttribute("aria-expanded",String(o));if(o){$("chatIn").focus();if(!log.children.length)greet()}}
+fab.addEventListener("click",function(){openChat(true)});
+$("close").addEventListener("click",function(){openChat(false)});
+function bubble(kind,text,links){var b=el("div","b "+kind);b.appendChild(document.createTextNode(text));
+  if(links&&links.length){var w=el("div","links");links.forEach(function(l){var r=el("div","lk");r.appendChild(el("span",null,l.name));r.appendChild(shopLinks(l.q));w.appendChild(r)});b.appendChild(w)}
+  log.appendChild(b);log.scrollTop=log.scrollHeight}
+var QUICK=["Wedding outfit","What to wear today","Black cargo pants under 1500","White sneakers","Rainy day outfit","Kurta for Diwali"];
+QUICK.forEach(function(q){var b=el("button","chip",q);b.type="button";b.addEventListener("click",function(){ask(q)});$("quick").appendChild(b)});
+function greet(){bubble("bot","Hi, I'm your FitPick stylist. Tell me what you're looking for, an occasion, or ask what to wear today. I'll give you Amazon.in and Flipkart links for every piece.")}
+
+var WORDS=["t-shirt","tshirt","tee","shirt","polo","jeans","cargo","cargos","trousers","pants","chinos","joggers","shorts","jacket","hoodie","sweater","sweatshirt","blazer","coat","kurta","kurti","sherwani","saree","lehenga","dress","top","skirt","palazzo","leggings","sneakers","shoes","sandals","boots","loafers","heels","flats","watch","cap","bag","backpack","sunglasses","raincoat","thermal","jumpsuit","tracksuit","suit","dupatta","jewellery","earrings","belt","wallet","socks","innerwear"];
+var COLORS=["black","white","beige","cream","navy","blue","grey","gray","olive","green","red","maroon","pink","brown","yellow","orange","purple","mustard","khaki"];
+var OCCKEYS=[["wedding","wedding"],["marriage","wedding"],["shaadi","wedding"],["diwali","festival"],["festival","festival"],["festive","festival"],["eid","festival"],["navratri","festival"],["puja","festival"],["interview","interview"],["office","office"],["work","office"],["formal","office"],["date","date"],["party","party"],["club","party"],["college","college"],["campus","college"],["gym","gym"],["workout","gym"],["travel","travel"],["trip","travel"],["flight","travel"],["casual","casual"],["outing","casual"],["brunch","casual"]];
+
+function ask(txt){
+  txt=String(txt||"").trim();if(!txt)return;
+  bubble("me",txt);$("chatIn").value="";
+  setTimeout(function(){reply(txt)},250);
+}
+function reply(raw){
+  var t=raw.toLowerCase(),g=S.g;
+  if(/\b(women|woman|girl|girls|ladies|female|her)\b/.test(t))g="women";else if(/\b(men|man|boy|boys|guy|male|his|him)\b/.test(t))g="men";
+  var gp=g==="men"?"men ":"women ";
+  var bm=t.match(/(?:under|below|less than|upto|up to|within|budget(?: of)?)\s*(?:rs\.?|₹|inr)?\s*(\d[\d,]*)/);
+  var budget=bm?parseInt(bm[1].replace(/,/g,""),10):null;
+  var bq=budget?" under "+budget:"";
+  var color=null;COLORS.forEach(function(c){if(!color&&new RegExp("\\b"+c+"\\b").test(t))color=c});
+
+  if(/^(hi|hello|hey|hii|namaste|yo)\b/.test(t)&&t.length<20){return bubble("bot","Hello! Ask for an item like 'olive cargo pants under 1500', or an occasion like 'interview outfit'.")}
+  if(/\b(help|what can you do)\b/.test(t)){return bubble("bot","I can: suggest outfits for occasions (wedding, office, date, party, gym, travel…), suggest what to wear in today's weather, and find items on Amazon.in and Flipkart. Add 'men' or 'women' and a budget like 'under 2000' for better results.")}
+
+  /* weather */
+  if(/\b(weather|today|rain|rainy|monsoon|cold|winter|hot|summer|heat|humid|snow|temperature|tonight)\b/.test(t)&&!/\bunder\b.*\b(rain)/.test(t)){
+    var c=S.cond,tp=S.temp;
+    if(/\b(rain|rainy|monsoon)\b/.test(t)){c="rain";tp=23}else if(/\bsnow\b/.test(t)){c="snow";tp=-1}else if(/\b(winter|cold|freezing)\b/.test(t)){c="chill";tp=10}else if(/\b(hot|summer|heat|humid)\b/.test(t)){tp=36}
+    var bk=BANDS[band(tp)],items=bk[g].slice();if(EXTRA[c])items=items.concat(EXTRA[c][g]);
+    var basis=(/\b(rain|rainy|monsoon|snow|winter|cold|hot|summer|heat|humid)\b/.test(t))?"that kind of weather":("today's weather ("+Math.round(S.temp)+"°C"+(S.live?" in "+S.place:"")+")");
+    return bubble("bot","For "+basis+" ("+bk.name.toLowerCase()+"), "+bk.vibe.toLowerCase()+" "+bk.note,items.map(function(i){return {name:i.role+": "+i.name,q:i.q}}));
+  }
+  /* occasion */
+  for(var k=0;k<OCCKEYS.length;k++){
+    if(new RegExp("\\b"+OCCKEYS[k][0]+"\\b").test(t)){
+      var o=OCC[OCCKEYS[k][1]];
+      return bubble("bot",o.label+" look for "+(g==="men"?"men":"women")+": "+o.vibe,o[g].map(function(i){return {name:i.role+": "+i.name,q:i.q+bq}}));
+    }
+  }
+  /* items */
+  var found=[];WORDS.forEach(function(w){if(new RegExp("\\b"+w+"\\b").test(t))found.push(w)});
+  if(found.length){
+    var links=found.slice(0,4).map(function(w){var q=gp+(color?color+" ":"")+w+bq;return {name:(color?color+" ":"")+w+(budget?" under ₹"+budget:""),q:q}});
+    return bubble("bot","Here you go. These open the search on each store"+(budget?", filtered by your budget in the search text":"")+".",links);
+  }
+  /* fallback: treat as search */
+  var cleaned=raw.replace(/[^\w\s₹-]/g," ").trim();
+  if(cleaned.length>1&&cleaned.split(/\s+/).length<=8){
+    return bubble("bot","I'm not sure which item that is, but here's a search for it:",[{name:cleaned,q:/\b(men|women)\b/.test(t)?cleaned:gp+cleaned}]);
+  }
+  bubble("bot","Try something like 'black hoodie for men under 1200', 'office outfit for women', or 'what to wear today'.");
+}
+$("chatForm").addEventListener("submit",function(e){e.preventDefault();ask($("chatIn").value)});
+
+renderAll();
+})();
+</script>
+
+</body>
+</html>
